@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+ <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bkcomm.instructions_system.dao.UserDao">
+	<resultMap type="User" id="baseMap">
+		<id property="userId" column="user_id" />
+		<!-- 定义普通属性 -->
+		<result property="userName" column="user_name" />
+		<result property="userPwd" column="user_pwd" />
+		<!-- 多的一方 -->
+		<collection property="userAccounts" column="user_id"
+			ofType="Account">
+			<id property="accountId" column="account_id" />
+			<result property="accountName" column="acc_name" />
+			<result property="tMoney" column="t_money" />
+			<result property="t1Money" column="t_one_money" />
+			<result property="cashMoney" column="cash_money" />
+			<result property="faceMoney" column="face_money" />
+		</collection>
+	</resultMap>
+	<!--查询所有user -->
+	<select id="getAllUsers" resultMap="baseMap">
+		select * from user
+	</select>
+
+	<!--登录验证 -->
+	<select id="isExistUser" resultMap="baseMap">
+		select user_name , user_pwd
+		from
+		user
+		where user_name = #{0} and user_pwd
+		= #{1}
+	</select>
+
+	<!--登录之后获取用户信息，与该用户对应的账户信息 -->
+	<select id="getUserAccountInfo" resultMap="baseMap">
+		select *
+		from user u
+		left join user_acc_right ua on u.user_id = ua.user_id
+		left join account
+		a on a.account_id = ua.account_id WHERE u.user_name
+		= #{userName};
+	</select>
+	<!--通过map传递多个参数 -->
+	<resultMap type="UserVO" id="userResultMap">
+		<result property="secuCode" column="secu_code" />
+		<result property="accoutName" column="acc_name" />
+	</resultMap>
+	<!-- 方案一 -->
+	<select id="getUAS" resultType="map">
+		select a.acc_name ,
+		sb.secu_code
+		from user u left join
+		user_acc_right ua on u.user_id =
+		ua.user_id
+		left
+		join account a on
+		a.account_id = ua.account_id
+		left join
+		secu_position sp
+		on
+		sp.account_id = a.account_id
+		left join secu_bond sb
+		on sb.secu_bond_id
+		= sp.secu_bond_id
+		where sb.secu_code = #{secuCode}
+		and a.acc_name =
+		#{accountName} ;
+	</select>
+
+	<!--resultmap來接收债券信息 -->
+	<resultMap type="SecuBond" id="secuBondMap">
+		<id property="secuBondId" column="secu_bond_id" />
+		<result property="secuCode" column="secu_code" />
+		<result property="secuName" column="secu_name" />
+		<result property="closeDay" column="close_day" />
+		<result property="registerOrg" column="registry_org" />
+		<result property="faceRate" column="face_rate" />
+		<result property="secuGrade" column="secu_grade" />
+		<result property="mainGrade" column="main_grade" />
+	</resultMap>
+	<!--根据债券id查询债券信息 -->
+	<select id="getSecuBondInfo" resultMap="secuBondMap">
+		select * from secu_bond
+		where secu_code = #{secuCode};
+	</select>
+
+	<!--账户信息，债券信息，持仓信息 -->
+	<select id="getAccBondPosi" parameterType="Account" resultType="UserVO">
+	select * from
+	account a
+	left join secu_position sp on a.account_id =
+	sp.account_id
+	left join
+	secu_bond sb on sb.secu_bond_id = sp.secu_bond_id
+	where a.acc_name = #{accountName};
+	</select>
+</mapper>
